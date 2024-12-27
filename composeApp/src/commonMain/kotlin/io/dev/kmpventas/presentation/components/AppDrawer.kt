@@ -1,5 +1,13 @@
 package io.dev.kmpventas.presentation.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -10,24 +18,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -51,37 +48,44 @@ fun AppDrawer(
         modifier = Modifier.fillMaxHeight(),
         drawerContainerColor = MaterialTheme.colorScheme.surface,
     ) {
-        // User Profile Section
-        Surface(
+        // Perfil de Usuario Mejorado
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            color = MaterialTheme.colorScheme.primaryContainer,
-            shape = MaterialTheme.shapes.medium
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
         ) {
             Column(
                 modifier = Modifier
-                    .padding(16.dp)
+                    .padding(24.dp)
                     .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.Start
             ) {
                 Surface(
-                    modifier = Modifier.size(64.dp),
-                    shape = MaterialTheme.shapes.medium,
-                    color = MaterialTheme.colorScheme.primary
+                    modifier = Modifier
+                        .size(72.dp)
+                        .padding(4.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                    border = BorderStroke(
+                        width = 2.dp,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                    )
                 ) {
                     Icon(
                         imageVector = Icons.Default.Person,
                         contentDescription = null,
-                        modifier = Modifier.padding(16.dp),
-                        tint = MaterialTheme.colorScheme.onPrimary
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .size(32.dp),
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = user.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = user.email,
@@ -91,9 +95,9 @@ fun AppDrawer(
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        // Menu Items with Scroll
+        // Menú Items con Scroll
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -111,26 +115,38 @@ fun AppDrawer(
             }
         }
 
-        Divider(modifier = Modifier.padding(vertical = 8.dp))
-
-        // Logout Button
-        ListItem(
-            headlineContent = { Text("Cerrar Sesión") },
-            leadingContent = {
-                Icon(
-                    Icons.Default.ExitToApp,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.error
-                )
-            },
-            modifier = Modifier
-                .padding(horizontal = 8.dp, vertical = 4.dp)
-                .clip(MaterialTheme.shapes.medium)
-                .clickable {
-                    // Llamar directamente a onLogout
-                    onLogout()
-                }
+        Divider(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
         )
+
+        // Botón de Cerrar Sesión
+        Surface(
+            modifier = Modifier
+                .padding(horizontal = 8.dp, vertical = 8.dp)
+                .fillMaxWidth()
+                .clip(MaterialTheme.shapes.small)
+                .clickable { onLogout() },
+            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.08f)
+        ) {
+            ListItem(
+                headlineContent = {
+                    Text(
+                        "Cerrar Sesión",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                },
+                leadingContent = {
+                    Icon(
+                        Icons.Default.ExitToApp,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+            )
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
     }
@@ -147,11 +163,14 @@ private fun MenuItemComponent(
 ) {
     val isSelected = currentRoute == menuItem.link
 
-    val backgroundColor = when {
-        isSelected -> MaterialTheme.colorScheme.primaryContainer
-        isExpanded -> MaterialTheme.colorScheme.surfaceVariant
-        else -> Color.Transparent
-    }
+    val backgroundColor by animateColorAsState(
+        targetValue = when {
+            isSelected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+            isExpanded -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            else -> Color.Transparent
+        },
+        label = "backgroundColorAnimation"
+    )
 
     Surface(
         modifier = Modifier
@@ -163,7 +182,8 @@ private fun MenuItemComponent(
                 end = 4.dp
             )
             .clip(MaterialTheme.shapes.small),
-        color = backgroundColor
+        color = backgroundColor,
+        tonalElevation = if (isSelected) 1.dp else 0.dp
     ) {
         Column {
             ListItem(
@@ -172,10 +192,13 @@ private fun MenuItemComponent(
                         text = menuItem.title,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        style = if (isSelected) {
-                            MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                        ),
+                        color = if (isSelected) {
+                            MaterialTheme.colorScheme.primary
                         } else {
-                            MaterialTheme.typography.bodyLarge
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f)
                         }
                     )
                 },
@@ -183,6 +206,7 @@ private fun MenuItemComponent(
                     Icon(
                         imageVector = getIconForName(menuItem.icon),
                         contentDescription = null,
+                        modifier = Modifier.size(22.dp),
                         tint = if (isSelected) {
                             MaterialTheme.colorScheme.primary
                         } else {
@@ -192,18 +216,27 @@ private fun MenuItemComponent(
                 },
                 trailingContent = if (!menuItem.children.isNullOrEmpty()) {
                     {
-                        IconButton(onClick = onExpandToggle) {
+                        IconButton(
+                            onClick = onExpandToggle,
+                            modifier = Modifier.size(32.dp)
+                        ) {
                             Icon(
-                                imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                contentDescription = if (isExpanded) "Colapsar" else "Expandir"
+                                imageVector = if (isExpanded) {
+                                    Icons.Default.ExpandLess
+                                } else {
+                                    Icons.Default.ExpandMore
+                                },
+                                contentDescription = if (isExpanded) "Colapsar" else "Expandir",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }
                 } else null,
                 modifier = Modifier.clickable(
-                    enabled = menuItem.link.isNotEmpty()
+                    enabled = menuItem.link.isNotEmpty() && menuItem.type == "basic"
                 ) {
-                    if (menuItem.link.isNotEmpty()) {
+                    if (menuItem.link.isNotEmpty() && menuItem.type == "basic") {
                         onNavigate(menuItem.link)
                     }
                     if (!menuItem.children.isNullOrEmpty()) {
@@ -213,15 +246,23 @@ private fun MenuItemComponent(
             )
 
             if (isExpanded && !menuItem.children.isNullOrEmpty()) {
-                menuItem.children.forEach { childItem ->
-                    MenuItemComponent(
-                        menuItem = childItem,
-                        currentRoute = currentRoute,
-                        isExpanded = false, // Los items hijos no tienen expansión
-                        onExpandToggle = { }, // Los items hijos no tienen expansión
-                        onNavigate = onNavigate,
-                        level = level + 1
-                    )
+                AnimatedVisibility(
+                    visible = isExpanded,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
+                ) {
+                    Column {
+                        menuItem.children.forEach { childItem ->
+                            MenuItemComponent(
+                                menuItem = childItem,
+                                currentRoute = currentRoute,
+                                isExpanded = false,
+                                onExpandToggle = { },
+                                onNavigate = onNavigate,
+                                level = level + 1
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -230,29 +271,29 @@ private fun MenuItemComponent(
 
 private fun getIconForName(iconName: String): androidx.compose.ui.graphics.vector.ImageVector {
     return when (iconName) {
-        "fa fa-pie-chart" -> Icons.Default.PieChart
-        "fa fa-bar-chart" -> Icons.Default.BarChart
-        "fa fa-cogs" -> Icons.Default.Settings
-        "fa fa-user-secret" -> Icons.Default.Security
-        "fa fa-user-circle-o" -> Icons.Default.Person
-        "fa fa-users" -> Icons.Default.Group
-        "fa fa-calendar-o" -> Icons.Default.DateRange
-        "fa fa-file" -> Icons.Default.Description
-        "fa fa-building-o" -> Icons.Default.Business
-        "fa fa-bars" -> Icons.Default.Menu
-        "fa fa-university" -> Icons.Default.AccountBalance
-        "fa fa-cart-arrow-down" -> Icons.Default.ShoppingCart
-        "fa fa-cart-plus" -> Icons.Default.AddShoppingCart
-        "fa fa-area-chart" -> Icons.Default.ShowChart
-        "fa fa-credit-card" -> Icons.Default.CreditCard
-        "fa fa-list-alt" -> Icons.Default.List
-        "fa fa-thermometer-empty" -> Icons.Default.Thermostat
-        "fa fa-cube" -> Icons.Default.Category
-        "fa fa-cubes" -> Icons.Default.Inventory
-        "fa fa-qrcode" -> Icons.Default.QrCode
-        "fa fa-truck" -> Icons.Default.LocalShipping
-        "fa fa-folder-open" -> Icons.Default.Folder
-        // Añade más mappings según necesites
+        "heroicons_outline:cog-6-tooth" -> Icons.Default.Settings
+        "heroicons_outline:user-group" -> Icons.Default.Group
+        "heroicons_outline:user-circle" -> Icons.Default.Person
+        "heroicons_outline:clipboard-document" -> Icons.Default.Description
+        "heroicons_outline:clipboard-document-check" -> Icons.Default.Assignment
+        "heroicons_outline:users" -> Icons.Default.People
+        "heroicons_outline:chart-pie" -> Icons.Default.PieChart
+        "heroicons_outline:chart-bar" -> Icons.Default.BarChart
+        "heroicons_outline:building-office" -> Icons.Default.Business
+        "heroicons_outline:building-library" -> Icons.Default.AccountBalance
+        "heroicons_outline:shopping-cart" -> Icons.Default.ShoppingCart
+        "heroicons_outline:credit-card" -> Icons.Default.CreditCard
+        "heroicons_outline:clipboard-list" -> Icons.Default.List
+        "heroicons_outline:cube" -> Icons.Default.Category
+        "heroicons_outline:qr-code" -> Icons.Default.QrCode
+        "heroicons_outline:truck" -> Icons.Default.LocalShipping
+        "heroicons_outline:folder" -> Icons.Default.Folder
+        "heroicons_outline:home" -> Icons.Default.Home                     // Para "Empresa"
+        "heroicons_outline:currency-dollar" -> Icons.Default.AttachMoney   // Para "Contabilidad"
+        "heroicons_outline:bars-4" -> Icons.Default.ViewList              // Para "Areas"
+        "heroicons_outline:exclamation-circle" -> Icons.Default.Error     // Para "Tipo de Afectacion"
+        "heroicons_outline:building-storefront" -> Icons.Default.Store    // Para "Almacén"
+        "heroicons_outline:circle-stack" -> Icons.Default.ViewModule
         else -> Icons.Default.Circle
     }
 }

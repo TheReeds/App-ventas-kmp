@@ -6,9 +6,13 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import io.dev.kmpventas.data.local.SessionManager
+import io.dev.kmpventas.presentation.screens.catalog.UnitMeasurementScreen
+import io.dev.kmpventas.presentation.screens.catalog.category.CategoryScreen
+import io.dev.kmpventas.presentation.screens.configuration.role.RoleScreen
 import io.dev.kmpventas.presentation.screens.dashboard.DashboardScreen
 import io.dev.kmpventas.presentation.screens.login.LoginScreen
 import io.dev.kmpventas.presentation.screens.dashboard.HomeScreen
+import io.dev.kmpventas.presentation.screens.dashboard.HomeViewModel
 import io.dev.kmpventas.presentation.screens.dashboard.RolScreen
 import io.dev.kmpventas.presentation.screens.dashboard.UserScreen
 import io.dev.kmpventas.presentation.screens.navigation.BaseScreenLayout
@@ -26,68 +30,84 @@ fun NavigationGraph(
     onLogout: () -> Unit,
     sessionManager: SessionManager = koinInject()
 ) {
+    val viewModel: HomeViewModel = koinInject()
+
+    LaunchedEffect(Unit) {
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            if (sessionManager.shouldRefreshToken() && destination.route != Routes.LOGIN) {
+                if (!sessionManager.isRefreshTokenValid()) {
+                    onLogout()
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(0.toString()) { inclusive = true }
+                    }
+                }
+            }
+        }
+    }
     NavHost(
         navController = navController,
-        startDestination = "splash"
+        startDestination = Routes.SPLASH
     ) {
         // Splash Screen
-        composable("splash") {
+        composable(Routes.SPLASH) {
             SplashScreen(
                 onSplashFinished = {
-                    if (sessionManager.isFirstRun()) {
-                        navController.navigate("onboarding") {
-                            popUpTo("splash") { inclusive = true }
+                    when {
+                        sessionManager.isFirstRun() -> {
+                            navController.navigate(Routes.ONBOARDING) {
+                                popUpTo(Routes.SPLASH) { inclusive = true }
+                            }
                         }
-                    } else if (sessionManager.isLoggedIn()) {
-                        navController.navigate("home") {
-                            popUpTo("splash") { inclusive = true }
+                        sessionManager.isLoggedIn() && sessionManager.isRefreshTokenValid() -> {
+                            navController.navigate(Routes.HOME) {
+                                popUpTo(Routes.SPLASH) { inclusive = true }
+                            }
                         }
-                    } else {
-                        navController.navigate("login") {
-                            popUpTo("splash") { inclusive = true }
+                        else -> {
+                            navController.navigate(Routes.LOGIN) {
+                                popUpTo(Routes.SPLASH) { inclusive = true }
+                            }
                         }
                     }
                 }
             )
         }
         // Login
-        composable("login") {
+        composable(Routes.LOGIN) {
             LoginScreen(
                 onLoginSuccess = { user ->
-                    navController.navigate("home") {
-                        popUpTo("login") { inclusive = true }
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(0.toString()) { inclusive = true }
                     }
                 }
             )
         }
-        composable("onboarding") {
+        composable(Routes.ONBOARDING) {
             OnboardingScreen(
                 onComplete = {
                     sessionManager.setFirstRunComplete()
-                    navController.navigate("login") {
-                        popUpTo("onboarding") { inclusive = true }
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.ONBOARDING) { inclusive = true }
                     }
                 }
             )
         }
 
         // Home screen con drawer
-        composable("home") {
+        composable(Routes.HOME) {
             BaseScreenLayout(
                 navController = navController,
                 title = "Inicio",
                 onLogout = {
                     onLogout()
-                    navController.navigate("login") {
+                    navController.navigate(Routes.LOGIN) {
                         popUpTo(0.toString()) { inclusive = true }
                     }
                 }
             ) { paddingValues ->
-                // Aquí puedes poner el contenido específico del Home
-                // Por ahora usaremos DefaultScreen
                 DefaultScreen(
                     title = "Inicio",
-                    route = "home",
+                    route = Routes.HOME,
                     navController = navController,
                     onLogout = onLogout,
                     paddingValues = paddingValues
@@ -111,141 +131,55 @@ private fun setupMenuRoutes(
 ) {
     // Lista de rutas implementadas específicamente
     val implementedRoutes = mapOf(
-        "/pages/dashboard" to "Dashboard",
-        "/pages/setup/rol" to "Roles",
-        "/pages/setup/user" to "Usuarios",
-        // Añade aquí más rutas implementadas cuando las crees
-    )
-
-    // Rutas principales
-    val mainRoutes = listOf(
-        "/pages/setup" to "Configuración",
-        "/pages/warehouse" to "Almacén",
-        "/pages/purchase" to "Compras",
-        "/pages/sale" to "Ventas",
-        "/pages/cash" to "Caja",
-        "/pages/report" to "Reportes"
-    )
-
-    // Registrar rutas principales
-    mainRoutes.forEach { (route, title) ->
-        navGraphBuilder.composable(route) {
-            BaseScreenLayout(
-                navController = navController,
-                title = title,
-                onLogout = onLogout
-            ) { paddingValues ->
-                DefaultScreen(
-                    title = title,
-                    route = route,
-                    navController = navController,
-                    onLogout = onLogout,
-                    paddingValues = paddingValues
-                )
-            }
-        }
-    }
-
-    // Lista completa de todas las rutas posibles
-    val allRoutes = listOf(
-        "/pages/dashboard" to "Dashboard",
-
         // Configuración
-        "/pages/setup/rol" to "Roles",
-        "/pages/setup/user" to "Usuarios",
-        "/pages/setup/person" to "Clientes",
-        "/pages/setup/period" to "Periodos",
-        "/pages/setup/type-voucher" to "Tipo Documento",
-        "/pages/setup/company" to "Empresa",
-        "/pages/setup/accounting-seat" to "Asientos Contables",
-        "/pages/setup/users-online" to "Usuarios Conectados",
+        Routes.HomeScreen.Setup.USER to "Usuarios",
+        Routes.HomeScreen.Setup.USER_COMPANY to "Usuario empresa",
+        Routes.HomeScreen.Setup.COMPANY to "Empresa",
+        Routes.HomeScreen.Setup.MODULE to "Módulos",
+        Routes.HomeScreen.Setup.PARENT_MODULE to "Módulos Padres",
+        Routes.HomeScreen.Setup.ROLE to "Roles",
 
-        // Almacén
-        "/pages/warehouse/measuredunit" to "Unidad de Medida",
-        "/pages/warehouse/category" to "Categorías",
-        "/pages/warehouse/product" to "Productos",
-        "/pages/warehouse/provider" to "Proveedores",
-        "/pages/warehouse/warehouse" to "Almacenes",
-        "/pages/warehouse/product-barcode-qrcode" to "Código Barras y QR",
-        "/pages/warehouse/activate-store" to "Activar Almacén",
-        "/pages/warehouse/products-stock" to "Stock de Productos",
-        "/pages/warehouse/warehouse-transfer" to "Movimiento Almacén",
-        "/pages/warehouse/kardex" to "Kardex",
-        "/pages/warehouse/distributor" to "Vendedores",
-        "/pages/warehouse/warehouse-stock-warehouse" to "Stock de Productos Alm",
-        "/pages/warehouse/warehouse-product-warranty" to "Garantías",
+        // Catálogo
+        Routes.HomeScreen.Catalog.UNIT_MEASUREMENT to "Unidad de Medida",
+        Routes.HomeScreen.Catalog.CATEGORY to "Categoría",
 
-        // Compras
-        "/pages/purchase/purchase" to "Compras",
-        "/pages/purchase/payment-providers" to "Métodos de pago",
-        "/pages/purchase/requirement" to "Requerimientos",
-        "/pages/purchase/quotes" to "Cotizaciones",
-        "/pages/purchase/admin-approved" to "Aprobación Admin",
-        "/pages/purchase/approved-management" to "Gestión aprobada",
-        "/pages/purchase/import" to "Importaciones",
-
-        // Ventas
-        "/pages/sale/sale" to "Ventas",
-        "/pages/sale/sales-report-general" to "Reporte General de Ventas",
-        "/pages/sale/sales-report-month" to "Reporte Mensual de Ventas",
-        "/pages/sale/sales-report-month-general" to "Reporte General Mensual",
-        "/pages/sale/order" to "Órdenes",
-        "/pages/sale/sales-receivable" to "Cuentas por Cobrar",
-        "/pages/sale/proforma" to "Proformas",
-        "/pages/sale/prices-list" to "Lista de Precios",
-        "/pages/sale/prices-list-detail" to "Detalle de Precios",
-        "/pages/sale/remission-guide" to "Guía de Remisión",
-        "/pages/sale/orders-receivable" to "Órdenes por Cobrar",
-        "/pages/sale/sales-advance" to "Adelanto de Ventas",
-        "/pages/sale/sales-calendar" to "Calendario de Ventas",
-        "/pages/sale/sales-utility" to "Utilidad de Ventas",
-
-        // Caja
-        "/pages/cash/movement" to "Movimientos de Caja",
-        "/pages/cash/state-report-cash-day" to "Reporte Diario de Caja",
-        "/pages/cash/state-report-cash-month" to "Reporte Mensual de Caja",
-        "/pages/cash/state-report-cash-general-day" to "Reporte General Diario",
-        "/pages/cash/state-report-cash-general-month" to "Reporte General Mensual",
-        "/pages/cash/commissions" to "Comisiones",
-
-        // Reportes
-        "/pages/report/utility" to "Utilidades",
-        "/pages/report/report-fise" to "Reporte FISE"
+        // Contabilidad
+        Routes.HomeScreen.Accounting.AREAS to "Areas",
+        Routes.HomeScreen.Accounting.TYPE_AFFECTATION to "Tipo de Afectación",
+        Routes.HomeScreen.Accounting.TYPE_DOCUMENT to "Tipo de Documento",
+        Routes.HomeScreen.Accounting.ACCOUNTING_PLAN to "Plan Contable",
+        Routes.HomeScreen.Accounting.ACCOUNTING_DYNAMICS to "Dinámica Contable",
+        Routes.HomeScreen.Accounting.ACCOUNTING_ACCOUNT_CLASS to "Clase Cuenta Contable",
+        Routes.HomeScreen.Accounting.STORES to "Almacén"
     )
 
-    allRoutes.forEach { (route, title) ->
+
+    // Registrar todas las rutas
+    implementedRoutes.forEach { (route, title) ->
         navGraphBuilder.composable(route) {
             BaseScreenLayout(
                 navController = navController,
                 title = title,
                 onLogout = onLogout
             ) { paddingValues ->
-                if (implementedRoutes.containsKey(route)) {
-                    // Si la ruta tiene una implementación específica
-                    when (route) {
-                        "/pages/dashboard" -> DashboardScreen(
-                            navController = navController,
-                            paddingValues = paddingValues
-                        )
-                        "/pages/setup/rol" -> RolScreen(
-                            navController = navController,
-                            paddingValues = paddingValues
-                        )
-                        "/pages/setup/user" -> UserScreen(
-                            navController = navController,
-                            paddingValues = paddingValues
-                        )
-                        else -> DefaultScreen(
-                            title = implementedRoutes[route] ?: title,
-                            route = route,
-                            navController = navController,
-                            onLogout = onLogout,
-                            paddingValues = paddingValues
-                        )
-                    }
-                } else {
-                    // Si la ruta no tiene implementación específica, usar la pantalla por defecto
-                    DefaultScreen(
+                when (route) {
+                    Routes.HomeScreen.Setup.USER -> UserScreen(
+                        navController = navController,
+                        paddingValues = paddingValues
+                    )
+                    Routes.HomeScreen.Catalog.UNIT_MEASUREMENT -> UnitMeasurementScreen(
+                        navController = navController,
+                        paddingValues = paddingValues
+                    )
+                    Routes.HomeScreen.Catalog.CATEGORY -> CategoryScreen(
+                        navController = navController,
+                        paddingValues = paddingValues
+                    )
+                    Routes.HomeScreen.Setup.ROLE -> RoleScreen(
+                        navController = navController,
+                        paddingValues = paddingValues
+                    )
+                    else -> DefaultScreen(
                         title = title,
                         route = route,
                         navController = navController,

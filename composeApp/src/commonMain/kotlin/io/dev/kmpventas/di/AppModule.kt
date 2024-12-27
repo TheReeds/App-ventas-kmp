@@ -20,6 +20,16 @@ import org.koin.core.module.dsl.singleOf
 import com.russhwolf.settings.Settings
 import io.dev.kmpventas.data.local.SessionManager
 import io.dev.kmpventas.data.local.SettingsFactory
+import io.dev.kmpventas.data.repository.CatalogRepositoryImpl
+import io.dev.kmpventas.data.repository.CategoryRepositoryImpl
+import io.dev.kmpventas.data.repository.RoleRepositoryImpl
+import io.dev.kmpventas.domain.repository.CatalogRepository
+import io.dev.kmpventas.domain.repository.CategoryRepository
+import io.dev.kmpventas.domain.repository.RoleRepository
+import io.dev.kmpventas.presentation.screens.catalog.UnitMeasurementViewModel
+import io.dev.kmpventas.presentation.screens.catalog.category.CategoryViewModel
+import io.dev.kmpventas.presentation.screens.configuration.role.RoleViewModel
+import io.dev.kmpventas.presentation.theme.ThemeViewModel
 import io.ktor.client.plugins.HttpTimeout
 
 val appModule = module {
@@ -75,4 +85,18 @@ val appModule = module {
             sessionManager = get()
         )
     }
+
+    // Catalog Module
+    single<CatalogRepository> { CatalogRepositoryImpl(get()) }
+    viewModel { UnitMeasurementViewModel(get()) }
+
+    single { ThemeViewModel(get()) }
+    // Category Module
+    single<CategoryRepository> { CategoryRepositoryImpl(get()) }
+    viewModel { CategoryViewModel(get()) }
+    // Role Module
+    single<RoleRepository> { RoleRepositoryImpl(get()) }
+    viewModel { RoleViewModel(get()) }
+
+
 }

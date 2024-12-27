@@ -23,10 +23,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -40,6 +37,13 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.dev.kmpventas.presentation.components.AppButton
+import io.dev.kmpventas.presentation.components.AppCard
+import io.dev.kmpventas.presentation.components.AppTextFieldWithKeyboard
+import io.dev.kmpventas.presentation.layouts.FormScreenLayout
+import io.dev.kmpventas.presentation.theme.AppTheme
+import io.dev.kmpventas.presentation.theme.LocalAppDimens
+import io.dev.kmpventas.presentation.theme.ThemeViewModel
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -48,6 +52,8 @@ fun LoginScreen(
     onLoginSuccess: (User) -> Unit,
     viewModel: LoginViewModel = koinInject()
 ) {
+    val themeViewModel: ThemeViewModel = koinInject()
+    val isDarkMode by themeViewModel.isDarkMode.collectAsStateWithLifecycle()
     val loginState by viewModel.loginState.collectAsStateWithLifecycle()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -75,160 +81,164 @@ fun LoginScreen(
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp)
-                .align(Alignment.Center),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+    AppTheme(darkTheme = isDarkMode) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
         ) {
-            // Logo o Título
-            Surface(
-                modifier = Modifier.size(100.dp),
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.primaryContainer
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = "VPM",
-                        style = MaterialTheme.typography.headlineLarge,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Campo de Email
-            OutlinedTextField(
-                value = email,
-                onValueChange = {
-                    email = it
-                    if (isEmailError) validateEmail()
-                },
-                label = { Text("Correo electrónico") },
-                leadingIcon = { Icon(Icons.Default.Email, null) },
-                trailingIcon = {
-                    if (isEmailError) {
-                        Icon(Icons.Default.Error, null, tint = MaterialTheme.colorScheme.error)
-                    }
-                },
-                isError = isEmailError,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
-                    imeAction = ImeAction.Next
-                ),
-                keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                ),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            if (isEmailError) {
-                Text(
-                    text = "Ingrese un usuario valido",
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.align(Alignment.Start)
-                )
-            }
-
-            // Campo de Contraseña
-            OutlinedTextField(
-                value = password,
-                onValueChange = {
-                    password = it
-                    if (isPasswordError) validatePassword()
-                },
-                label = { Text("Contraseña") },
-                trailingIcon = {
-                    IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
-                        Icon(
-                            if (isPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = if (isPasswordVisible) "Ocultar contraseña" else "Mostrar contraseña"
-                        )
-                    }
-                },
-                visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                isError = isPasswordError,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        keyboardController?.hide()
-                        validateAndLogin()
-                    }
-                ),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            if (isPasswordError) {
-                Text(
-                    text = "La contraseña debe tener al menos 6 caracteres",
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.align(Alignment.Start)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Botón de inicio de sesión
-            Button(
-                onClick = { validateAndLogin() },
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                enabled = email.isNotEmpty() && password.isNotEmpty() && loginState !is LoginState.Loading
+                    .fillMaxSize()
+                    .padding(horizontal = LocalAppDimens.current.spacing_24.dp),
+                contentAlignment = Alignment.Center
             ) {
-                if (loginState is LoginState.Loading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp
-                    )
-                } else {
-                    Text("INICIAR SESIÓN")
-                }
-            }
-
-            // Error message
-            AnimatedVisibility(visible = loginState is LoginState.Error) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 400.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    Text(
-                        text = (loginState as? LoginState.Error)?.message ?: "",
+                    // Logo con color adaptativo
+                    AppCard(
+                        modifier = Modifier
+                            .size(100.dp)
+                            .padding(bottom = LocalAppDimens.current.spacing_32.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(MaterialTheme.colorScheme.primaryContainer),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "VPM",
+                                style = MaterialTheme.typography.headlineLarge,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+
+                    // Botón de cambio de tema
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.TopEnd
+                    ) {
+                        IconButton(onClick = { themeViewModel.toggleTheme() }) {
+                            Icon(
+                                imageVector = if (isDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode,
+                                contentDescription = if (isDarkMode) "Cambiar a modo claro" else "Cambiar a modo oscuro",
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+                    }
+
+                    // Email TextField
+                    AppTextFieldWithKeyboard(
+                        value = email,
+                        onValueChange = {
+                            email = it
+                            if (isEmailError) validateEmail()
+                        },
+                        label = "Correo electrónico",
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Email,
+                                null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        trailingIcon = if (isEmailError) {
+                            {
+                                Icon(
+                                    Icons.Default.Error,
+                                    null,
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        } else null,
+                        isError = isEmailError,
+                        errorMessage = if (isEmailError) "Ingrese un correo electrónico válido" else null,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                        ),
+                        modifier = Modifier.padding(bottom = LocalAppDimens.current.spacing_16.dp)
+                    )
+
+                    // Password TextField (con colores adaptativos)
+                    AppTextFieldWithKeyboard(
+                        value = password,
+                        onValueChange = {
+                            password = it
+                            if (isPasswordError) validatePassword()
+                        },
+                        label = "Contraseña",
+                        trailingIcon = {
+                            IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                                Icon(
+                                    if (isPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = if (isPasswordVisible) "Ocultar contraseña" else "Mostrar contraseña",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        },
+                        visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        isError = isPasswordError,
+                        errorMessage = if (isPasswordError) "La contraseña debe tener al menos 6 caracteres" else null,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = { validateAndLogin() }
+                        ),
+                        modifier = Modifier.padding(bottom = LocalAppDimens.current.spacing_24.dp)
+                    )
+
+                    AppButton(
+                        text = "INICIAR SESIÓN",
+                        onClick = { validateAndLogin() },
+                        enabled = email.isNotEmpty() && password.isNotEmpty(),
+                        loading = loginState is LoginState.Loading,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onErrorContainer
+                            .padding(bottom = LocalAppDimens.current.spacing_16.dp)
                     )
-                }
-            }
 
-            // Enlaces adicionales
-            TextButton(onClick = { /* TODO: Implementar recuperación */ }) {
-                Text("¿Olvidaste tu contraseña?")
+                    // Error Message con colores adaptativos
+                    AnimatedVisibility(
+                        visible = loginState is LoginState.Error,
+                        modifier = Modifier.padding(bottom = LocalAppDimens.current.spacing_16.dp)
+                    ) {
+                        AppCard(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = (loginState as? LoginState.Error)?.message ?: "",
+                                modifier = Modifier.padding(LocalAppDimens.current.spacing_16.dp),
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodyMedium,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+
+                    TextButton(onClick = { /* TODO: Implementar recuperación */ }) {
+                        Text(
+                            "¿Olvidaste tu contraseña?",
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
             }
         }
     }
 
-    // Manejar el éxito del login
+        // Handle login success
     LaunchedEffect(loginState) {
         if (loginState is LoginState.Success) {
             onLoginSuccess((loginState as LoginState.Success).user)
